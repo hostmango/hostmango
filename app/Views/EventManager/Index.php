@@ -1,9 +1,6 @@
-<!-- app/Views/EventManager/Index.php -->
+<?= view('Static/Header') ?>
 
-<?= $this->extend('template/admin/main') ?>
-
-<?= $this->section('content') ?>
-
+<!-- Original EventManager/Index.php content starts here -->
 <div class="card">
     <div class="card-header">
         <h3 class="card-title"><?= lang('EventManager.page.title') ?></h3>
@@ -134,10 +131,9 @@
         </div>
     </div>
 </div>
+<!-- Original EventManager/Index.php content ends here -->
 
-<?= $this->endSection() ?>
-
-<?= $this->section('scripts') ?>
+<!-- Original script sections if any -->
 <script>
 $(document).ready(function() {
     // Datetime picker initialization (example using Flatpickr, if available)
@@ -293,4 +289,5 @@ $(document).ready(function() {
     });
 });
 </script>
-<?= $this->endSection() ?>
+
+<?= view('Static/Footer') ?>
