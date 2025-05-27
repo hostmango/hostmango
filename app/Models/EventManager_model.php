@@ -17,6 +17,7 @@ class EventManager_model extends Model
 
     // Fields that are allowed to be saved by insert/update methods
     protected $allowedFields    = [
+        'id', // Added as per request
         'event_index',
         'start_time',
         'end_time',

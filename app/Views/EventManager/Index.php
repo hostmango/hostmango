@@ -168,7 +168,7 @@ $(document).ready(function() {
         ],
         responsive: true,
         language: { // Optional: if you want to localize DataTables
-            url: '<?= base_url('assets/plugins/datatables/i18n/Turkish.json') ?>' // Adjust path as needed
+            url: '<?= base_url('assets/js/tr.json') ?>' // Corrected path
         }
     });
 
@@ -190,8 +190,10 @@ $(document).ready(function() {
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                if (response.status === 'success' && response.data.event) {
-                    var event = response.data.event;
+                // Assuming responseResult format: {'type':'success', 'success':true, 'event':eventData}
+                // or {'type':'success', 'message': 'some message', 'event':eventData}
+                if (response.type === 'success' && response.event) {
+                    var event = response.event;
                     $('#eventId').val(event.id);
                     $('#event_index').val(event.event_index);
                     $('#start_time').val(event.start_time);
@@ -205,7 +207,9 @@ $(document).ready(function() {
                     $('#eventModalLabel').text('<?= lang('EventManager.form.titleEdit') ?>');
                     $('#eventModal').modal('show');
                 } else {
-                    Swal.fire('<?= lang('Genel.hata') ?>', response.message || '<?= lang('EventManager.message.eventNotFound') ?>', 'error');
+                    // Assuming error message is in response.error if type is not success, or response.message
+                    var errorMessage = response.error || response.message || '<?= lang('EventManager.message.eventNotFound') ?>';
+                    Swal.fire('<?= lang('Genel.hata') ?>', errorMessage, 'error');
                 }
             },
             error: function() {
@@ -228,22 +232,26 @@ $(document).ready(function() {
             data: formData,
             dataType: 'json',
             success: function(response) {
-                if (response.status === 'success') {
+                if (response.type === 'success') {
                     $('#eventModal').modal('hide');
                     table.ajax.reload(null, false); // false to keep current page
-                    Swal.fire('<?= lang('Genel.basarili') ?>', response.message, 'success');
+                    // Assuming success message is in response.message or response.success
+                    var successMessage = response.message || response.success || '<?= lang('Genel.basarili') ?>';
+                    Swal.fire('<?= lang('Genel.basarili') ?>', successMessage, 'success');
                 } else {
-                    if (typeof response.message === 'object') {
+                    // Assuming error messages/object is in response.error
+                    if (typeof response.error === 'object') {
                         var errors = '<ul>';
-                        $.each(response.message, function(key, value) {
+                        $.each(response.error, function(key, value) {
                             errors += '<li>' + value + '</li>';
                         });
                         errors += '</ul>';
                         $('#formErrors').html(errors).show();
                          Swal.fire('<?= lang('Genel.hata') ?>', "<?= lang('Genel.formHatalari') ?>", 'error');
                     } else {
-                         $('#formErrors').html('<li>'+ (response.message || '<?= lang('Genel.bilinmeyenHata') ?>') +'</li>').show();
-                         Swal.fire('<?= lang('Genel.hata') ?>', response.message || '<?= lang('Genel.bilinmeyenHata') ?>', 'error');
+                         var errorMessage = response.error || response.message || '<?= lang('Genel.bilinmeyenHata') ?>';
+                         $('#formErrors').html('<li>'+ errorMessage +'</li>').show();
+                         Swal.fire('<?= lang('Genel.hata') ?>', errorMessage, 'error');
                     }
                 }
             },
@@ -273,11 +281,13 @@ $(document).ready(function() {
                     type: 'POST', // Or 'DELETE' if your server/routes support it
                     dataType: 'json',
                     success: function(response) {
-                        if (response.status === 'success') {
+                if (response.type === 'success') {
                             table.ajax.reload(null, false);
-                            Swal.fire('<?= lang('Genel.silindi') ?>', response.message, 'success');
+                    var successMessage = response.message || response.success || '<?= lang('Genel.silindi') ?>';
+                    Swal.fire('<?= lang('Genel.silindi') ?>', successMessage, 'success');
                         } else {
-                            Swal.fire('<?= lang('Genel.hata') ?>', response.message || '<?= lang('Genel.bilinmeyenHata') ?>', 'error');
+                    var errorMessage = response.error || response.message || '<?= lang('Genel.bilinmeyenHata') ?>';
+                    Swal.fire('<?= lang('Genel.hata') ?>', errorMessage, 'error');
                         }
                     },
                     error: function() {

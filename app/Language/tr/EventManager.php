@@ -63,4 +63,7 @@ return [
 
     // General
     'EventManager.general.loading'          => 'Yükleniyor...',
+
+    // Validation Messages
+    'EventManager.validation.endTimeAfterStartTime' => 'Bitiş zamanı, başlangıç zamanından sonra olmalıdır.',
 ];
