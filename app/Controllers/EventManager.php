@@ -14,6 +14,9 @@ class EventManager extends BaseController
 
     public function __construct()
     {
+        helper('language');
+        service('language')->load('EventManager', 'tr');
+
         $this->viewFolder = "EventManager";
         $this->eventModel = model(EventManager_model::class); // Corrected model loading
         $this->validation = \Config\Services::validation();
@@ -26,7 +29,7 @@ class EventManager extends BaseController
             header('Location: ' . base_url('GirisYap'));
             exit;
         }
-        // Language file EventManager should be loaded automatically by lang() helper if named correctly.
+        // Language file EventManager is now explicitly loaded.
     }
 
     public function index()
@@ -37,7 +40,7 @@ class EventManager extends BaseController
 
         $viewData['title'] = lang('EventManager.page.title');
         // Assuming ConstantHeader() is a global helper or part of BaseController
-        $viewData = array_merge(ConstantHeader(), $viewData); 
+        $viewData = array_merge(ConstantHeader(), $viewData);
         // LogAdd similar to Oyuncu controller if needed
         // LogAdd(lang('EventManager.log.viewedPage'), 'EventManager/index', session('user_id'));
 
@@ -84,7 +87,7 @@ class EventManager extends BaseController
                 ];
             }
         }
-        
+
         $output = [
             "draw" => $draw,
             "recordsTotal" => $totalRecords,
@@ -107,7 +110,7 @@ class EventManager extends BaseController
             responseResult('error', lang('EventManager.message.invalidData')); // Or a more specific "ID required"
             return;
         }
-        
+
         $event = $this->eventModel->getEventById((int)$id);
 
         if ($event) {
@@ -116,7 +119,7 @@ class EventManager extends BaseController
             responseResult('error', lang('EventManager.message.eventNotFound'));
         }
     }
-    
+
     private function getValidationRules(): array
     {
         return [
@@ -164,60 +167,74 @@ class EventManager extends BaseController
 
     public function create()
     {
+        // Permission Check
         if (!IsAllowedViewModule('eventManagerDuzenleyebilsin')) {
             responseResult('error', lang('Genel.yetkisizErisim'));
             return;
         }
 
+        // Request Type Check
         if (!$this->request->isAJAX() || $this->request->getMethod() !== 'post') {
              responseResult('error', lang('Genel.invalidRequest')); // Assuming Genel.invalidRequest
              return;
         }
-        
+
+        // 1. Store POST data (though validation accesses it directly via $this->request)
+        // $postData = $this->request->getPost(); // For explicit debugging if needed later
+
+        // 2. Handle Validation
         $rules = $this->getValidationRules();
-        // Custom validation rule for end_time after start_time
-        // This needs to be registered in app/Config/Validation.php or similar
-        // For now, I'll add a placeholder for a custom rule logic.
-        // A simple 'matches[start_time]' won't check if it's AFTER, just if it's a valid date.
-        // A more robust solution would be a custom validation rule.
-        // For now, I will remove `matches[start_time]` and `validate_end_time`
-        // and rely on manual check after validation if needed, or assume a basic valid_date is enough for this step.
-        unset($rules['end_time']['rules']['matches']); // removing for now
-        unset($rules['end_time']['rules']['validate_end_time']); // removing for now
-        // A better rule might be: 'end_time' => 'required|valid_date[Y-m-d H:i:s]|callback_is_after_start_time'
-        // Then define public function is_after_start_time($endTime, string $startTimeFieldName, array $data)
+        // Removing specific complex validation rules for end_time that were placeholders
+        // These were: matches[start_time] and validate_end_time[{start_time}]
+        // The manual check for end_time > start_time is preserved below.
+        if (isset($rules['end_time']['rules'])) { // Ensure 'rules' key exists
+            $rules['end_time']['rules'] = 'required|valid_date[Y-m-d H:i:s]';
+            // Remove 'errors' if 'validate_end_time' specific error is no longer applicable
+            unset($rules['end_time']['errors']);
+        }
+
 
         $this->validation->setRules($rules);
+        $isValid = $this->validation->withRequest($this->request)->run();
 
-        if ($this->validation->withRequest($this->request)->run()) {
-            $data = [
-                'event_index'   => $this->request->getPost('event_index'),
-                'start_time'    => $this->request->getPost('start_time'),
-                'end_time'      => $this->request->getPost('end_time'),
-                'empire_flag'   => $this->request->getPost('empire_flag'),
-                'channel_flag'  => $this->request->getPost('channel_flag'),
-                'value0'        => $this->request->getPost('value0'),
-                'value1'        => $this->request->getPost('value1'),
-                'value2'        => $this->request->getPost('value2'),
-                'value3'        => $this->request->getPost('value3'),
-            ];
-            
-            // Manual check for end_time after start_time
-            if (strtotime($data['end_time']) <= strtotime($data['start_time'])) {
-                responseResult('error', ['end_time' => lang('EventManager.validation.endTimeAfterStartTime')]);
-                return;
-            }
-
-            $result = $this->eventModel->createEvent($data);
-            if ($result) {
-                // LogAdd(lang('EventManager.log.eventCreated', ['id' => $result]), 'EventManager/create', session('user_id'));
-                responseResult('success', lang('EventManager.message.createSuccess'));
-            } else {
-                responseResult('error', lang('EventManager.message.createError'));
-            }
-        } else {
-            responseResult('error', $this->validation->getErrors());
+        if (!$isValid) {
+            $validationErrors = $this->validation->getErrors();
+            responseResult('error', $validationErrors);
+            return;
         }
+
+        // 3. Prepare Data for Model (If validation passes)
+        $dataForModel = [
+            'event_index'   => $this->request->getPost('event_index'),
+            'start_time'    => $this->request->getPost('start_time'),
+            'end_time'      => $this->request->getPost('end_time'),
+            'empire_flag'   => $this->request->getPost('empire_flag'),
+            'channel_flag'  => $this->request->getPost('channel_flag'),
+            'value0'        => $this->request->getPost('value0'),
+            'value1'        => $this->request->getPost('value1'),
+            'value2'        => $this->request->getPost('value2'),
+            'value3'        => $this->request->getPost('value3'),
+        ];
+
+        // Additional Manual Validation (Example: end_time after start_time)
+        if (strtotime($dataForModel['end_time']) <= strtotime($dataForModel['start_time'])) {
+            responseResult('error', ['end_time' => lang('EventManager.validation.endTimeAfterStartTime')]);
+            return;
+        }
+
+        // 4. Handle Model Interaction
+        $modelResult = $this->eventModel->createEvent($dataForModel);
+
+        // 5. Ensure responseResult is always called
+        if ($modelResult) {
+            // LogAdd(lang('EventManager.log.eventCreated', ['id' => $modelResult]), 'EventManager/create', session('user_id'));
+            responseResult('success', lang('EventManager.message.createSuccess'));
+        } else {
+            responseResult('error', lang('EventManager.message.createError'));
+        }
+        // return statement is implicit here as responseResult handles output and potentially exits.
+        // However, for clarity, we can add return after each responseResult if the helper doesn't exit.
+        // Assuming responseResult exits or this is the end of the execution path.
     }
 
     public function update($id = null)
@@ -226,7 +243,7 @@ class EventManager extends BaseController
             responseResult('error', lang('Genel.yetkisizErisim'));
             return;
         }
-        
+
         if (!$this->request->isAJAX() || $this->request->getMethod() !== 'post' || $id === null) {
              responseResult('error', lang('Genel.invalidRequest'));
              return;
@@ -237,9 +254,9 @@ class EventManager extends BaseController
             responseResult('error', lang('EventManager.message.eventNotFound'));
             return;
         }
-        
+
         $rules = $this->getValidationRules();
-        unset($rules['end_time']['rules']['matches']); 
+        unset($rules['end_time']['rules']['matches']);
         unset($rules['end_time']['rules']['validate_end_time']);
 
         $this->validation->setRules($rules);

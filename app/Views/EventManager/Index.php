@@ -77,7 +77,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -190,10 +190,8 @@ $(document).ready(function() {
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                // Assuming responseResult format: {'type':'success', 'success':true, 'event':eventData}
-                // or {'type':'success', 'message': 'some message', 'event':eventData}
                 if (response.type === 'success' && response.event) {
-                    var event = response.event;
+                    var event = response.event; // Correctly accessing event data
                     $('#eventId').val(event.id);
                     $('#event_index').val(event.event_index);
                     $('#start_time').val(event.start_time);
@@ -206,10 +204,11 @@ $(document).ready(function() {
                     $('#value3').val(event.value3);
                     $('#eventModalLabel').text('<?= lang('EventManager.form.titleEdit') ?>');
                     $('#eventModal').modal('show');
+                } else if (response.type === 'error') {
+                    Swal.fire('<?= lang('Genel.hata') ?>', response.error || '<?= lang('EventManager.message.eventNotFound') ?>', 'error');
                 } else {
-                    // Assuming error message is in response.error if type is not success, or response.message
-                    var errorMessage = response.error || response.message || '<?= lang('EventManager.message.eventNotFound') ?>';
-                    Swal.fire('<?= lang('Genel.hata') ?>', errorMessage, 'error');
+                    // Fallback for unexpected response structure
+                    Swal.fire('<?= lang('Genel.hata') ?>', '<?= lang('Genel.bilinmeyenHata') ?>', 'error');
                 }
             },
             error: function() {
@@ -235,23 +234,17 @@ $(document).ready(function() {
                 if (response.type === 'success') {
                     $('#eventModal').modal('hide');
                     table.ajax.reload(null, false); // false to keep current page
-                    // Assuming success message is in response.message or response.success
-                    var successMessage = response.message || response.success || '<?= lang('Genel.basarili') ?>';
-                    Swal.fire('<?= lang('Genel.basarili') ?>', successMessage, 'success');
+                    Swal.fire('<?= lang('Genel.basarili') ?>', response.success || '<?= lang('Genel.basarili') ?>', 'success');
+                } else if (response.type === 'error') {
+                    var errorMessage = response.error || '<?= lang('Genel.bilinmeyenHata') ?>';
+                    // Display errors in the form, response.error is expected to be HTML string from validation or simple string
+                    $('#formErrors').html(errorMessage).show();
+                    // Display a general error in SweetAlert
+                    Swal.fire('<?= lang('Genel.hata') ?>', '<?= lang('Genel.formHatalari') ?>', 'error');
                 } else {
-                    // Assuming error messages/object is in response.error
-                    if (typeof response.error === 'object') {
-                        var errors = '<ul>';
-                        $.each(response.error, function(key, value) {
-                            errors += '<li>' + value + '</li>';
-                        });
-                        errors += '</ul>';
-                        $('#formErrors').html(errors).show();
-                         Swal.fire('<?= lang('Genel.hata') ?>', "<?= lang('Genel.formHatalari') ?>", 'error');
-                    } else {
-                         var errorMessage = response.error || response.message || '<?= lang('Genel.bilinmeyenHata') ?>';
-                         $('#formErrors').html('<li>'+ errorMessage +'</li>').show();
-                         Swal.fire('<?= lang('Genel.hata') ?>', errorMessage, 'error');
+                    // Fallback for unexpected response structure
+                    $('#formErrors').html('<li><?= lang('Genel.bilinmeyenHata') ?></li>').show();
+                    Swal.fire('<?= lang('Genel.hata') ?>', '<?= lang('Genel.bilinmeyenHata') ?>', 'error');
                     }
                 }
             },
@@ -282,15 +275,16 @@ $(document).ready(function() {
                     dataType: 'json',
                     success: function(response) {
                 if (response.type === 'success') {
-                            table.ajax.reload(null, false);
-                    var successMessage = response.message || response.success || '<?= lang('Genel.silindi') ?>';
-                    Swal.fire('<?= lang('Genel.silindi') ?>', successMessage, 'success');
-                        } else {
-                    var errorMessage = response.error || response.message || '<?= lang('Genel.bilinmeyenHata') ?>';
-                    Swal.fire('<?= lang('Genel.hata') ?>', errorMessage, 'error');
-                        }
-                    },
-                    error: function() {
+                    table.ajax.reload(null, false);
+                    Swal.fire('<?= lang('Genel.silindi') ?>', response.success || '<?= lang('Genel.silindi') ?>', 'success');
+                } else if (response.type === 'error') {
+                    Swal.fire('<?= lang('Genel.hata') ?>', response.error || '<?= lang('Genel.bilinmeyenHata') ?>', 'error');
+                } else {
+                    // Fallback for unexpected response structure
+                    Swal.fire('<?= lang('Genel.hata') ?>', '<?= lang('Genel.bilinmeyenHata') ?>', 'error');
+                }
+            },
+            error: function() {
                         Swal.fire('<?= lang('Genel.hata') ?>', '<?= lang('Genel.bilinmeyenHata') ?>', 'error');
                     }
                 });
