@@ -18,8 +18,8 @@ if (file_exists(SYSTEMPATH . 'Config/Routes.php'))
 * --------------------------------------------------------------------
 */
 $routes->setDefaultNamespace('App\Controllers');
-$routes->setDefaultController('GirisYap');
-$routes->setDefaultMethod('Index');
+$routes->setDefaultController('Home');
+$routes->setDefaultMethod('index');
 $routes->setTranslateURIDashes(false);
 $routes->set404Override('App\Controllers\Yonlendir::Index');
 $routes->setAutoRoute(true);
@@ -30,9 +30,18 @@ $routes->setAutoRoute(true);
 * --------------------------------------------------------------------
 */
 
-// We get a performance increase by specifying the default
-// route since we don't have to scan directories.
-// $routes->add('/',				 						'GirisYap::Index');
+// Public frontend routes
+$routes->get('/', 'Home::index');
+$routes->get('yeni-sunucular', 'Home::yeniSunucular');
+$routes->get('en-iyi-sunucular', 'Home::enIyiSunucular');
+$routes->get('sunucu-ekle', 'Home::sunucuEkle');
+$routes->get('uye-ol', 'Home::uyeOl');
+$routes->get('giris', 'Home::giris');
+$routes->get('reklam-iletisim', 'Home::reklamIletisim');
+$routes->get('blog', 'Home::blog');
+$routes->get('server/(:num)', 'Home::serverDetay/$1');
+
+// Admin panel routes
 $routes->add('CikisYap', 						'GirisYap::CikisYap');
 $routes->add('OnBellekleriTemizle',	'Anasayfa::OnBellekleriTemizle');
 $routes->add('KaranlikTema/(:any)',	'Anasayfa::KaranlikTema/$1');
